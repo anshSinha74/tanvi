@@ -269,9 +269,15 @@
       document.querySelectorAll(".paper").forEach((p) => new Paper(p));
 
       const heartPaper = document.getElementById("heartPaper");
-      heartPaper.addEventListener("click", () => {
-        window.location.href = "surprise.html";
-      });
+      heartPaper.addEventListener("touchend", (e) => {
+  e.stopPropagation();
+  window.location.href = "surprise.html";
+});
+
+heartPaper.addEventListener("click", () => {
+  window.location.href = "surprise.html";
+});
+
   document.querySelectorAll(".video-paper").forEach(paper => {
     const video = paper.querySelector(".paper-video");
     let started = false;
@@ -301,3 +307,4 @@
     </script>
   </body>
 </html>
+
