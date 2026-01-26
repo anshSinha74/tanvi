@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word Guessing Game</title>
+    <style>
+      body {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        text-align: center;
+        background-color: #ffefd5;
+        background-image: url("https://www.transparenttextures.com/patterns/bright-squares.png");
+        color: #5a3d1e;
+      }
+
+      h1 {
+        font-size: 2.5em;
+        color: #ff4500;
+        text-shadow: 2px 2px #ffa07a;
+        margin-bottom: 5px;
+      }
+
+      /* NEW STYLE FOR LIVES */
+      #lives {
+        font-size: 2em;
+        margin: 10px;
+        color: #ff0000;
+        text-shadow: 1px 1px 2px #5a3d1e;
+      }
+
+      #word-display {
+        font-size: 2.5em;
+        margin: 20px;
+        font-weight: bold;
+        color: #228b22;
+      }
+
+      #hint {
+        font-size: 1.5em;
+        color: #8a2be2;
+        margin: 10px;
+        font-style: italic;
+      }
+
+      #message {
+        font-size: 1.8em;
+        color: #d2691e;
+        font-weight: bold;
+        min-height: 1.5em; /* Keeps layout stable */
+      }
+
+      .letter-button {
+        font-size: 1.5em;
+        margin: 5px;
+        padding: 15px;
+        cursor: pointer;
+        border-radius: 10px;
+        border: none;
+        background-color: #ff6347;
+        color: white;
+        font-weight: bold;
+        transition: 0.3s;
+      }
+
+      .letter-button:hover {
+        background-color: #ff4500;
+        transform: scale(1.1);
+      }
+
+      /* Style for disabled buttons (used when game is over or letter clicked) */
+      .letter-button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      #animation {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <audio id="bg-music" loop preload="auto">
+      <source src="background-music.mp3" type="audio/mpeg" />
+    </audio>
+
+    <h1>🌟 Guess the Word, Bachche! 🌟</h1>
+
+    <div id="lives"></div>
+
+    <p id="hint"></p>
+    <p id="word-display">_ _ _ _ _ _ _ _</p>
+    <div id="letters"></div>
+    <p id="message"></p>
+    <div id="animation"></div>
+
+    <script>
+      (function forceAudioStart() {
+        const music = document.getElementById("bg-music");
+
+        const startMusic = () => {
+          music.play().catch(() => {});
+          document.removeEventListener("click", startMusic);
+          document.removeEventListener("keydown", startMusic);
+          document.removeEventListener("touchstart", startMusic);
+        };
+
+        // Try immediately (works only if browser allows)
+        music.play().catch(() => {});
+
+        // Guaranteed unlock on first human action (invisible)
+        document.addEventListener("click", startMusic);
+        document.addEventListener("keydown", startMusic);
+        document.addEventListener("touchstart", startMusic);
+      })();
+      const wordsWithHints = [
+        {
+          word: "Shadow",
+          hint: "A silent partner that follows your every move.🤔",
+        },
+        {
+          word: "Pig",
+          hint: "The animal that loves to roll in the mud and is often considered cute!",
+        },
+        {
+          word: "Sketching",
+          hint: "Something you’ve loved since childhood and are really good at.",
+        },
+        {
+          word: "Calligraphy",
+          hint: "The art of making words look beautiful.",
+        },
+        { word: "Durga", hint: "Which goddess is hidden in your name?" },
+        { word: "Mirror", hint: "It shows you the truth, but never judges." },
+        { word: "Palm", hint: "What kind of tree can you carry in your hand?" },
+        {
+          word: "ukulele",
+          hint: "During your drop year, which musical instrument did you learn and enjoy playing?",
+        },
+        {
+          word: "Amla",
+          hint: "According to your bro, which fruit keeps the dermatologist away?😂",
+        },
+        {
+          word: "Serum",
+          hint: "What silly thing did your brother call a polio drop? 😂",
+        },
+      ];
+
+      let usedWords = new Set();
+      let selectedWordObj;
+      let lives = 5; // Start with 5 lives
+
+      function getNewWord() {
+        let availableWords = wordsWithHints.filter(
+          (item) => !usedWords.has(item.word),
+        );
+        if (availableWords.length === 0) {
+          document.getElementById("message").innerText =
+            "All words guessed! Well done, Sissu! 🎉";
+          setTimeout(() => {
+            window.location.href = "paper.html";
+          }, 2000);
+          return;
+        }
+        selectedWordObj =
+          availableWords[Math.floor(Math.random() * availableWords.length)];
+        usedWords.add(selectedWordObj.word);
+        return selectedWordObj;
+      }
+
+      function updateLivesDisplay() {
+        let hearts = "";
+        for (let i = 0; i < lives; i++) {
+          hearts += "❤️ ";
+        }
+        // If lives are 0, show a broken heart or skull (optional)
+        if (lives === 0) hearts = "💔 Game Over";
+        document.getElementById("lives").innerText = hearts;
+      }
+
+      function startGame() {
+        lives = 5; // Reset lives
+        updateLivesDisplay();
+        document.getElementById("message").innerText = ""; // Clear old messages
+        document.getElementById("animation").innerHTML = ""; // Clear old gifs
+
+        selectedWordObj = getNewWord();
+        if (!selectedWordObj) return;
+
+        let chosenWord = selectedWordObj.word.toUpperCase();
+        let displayWord = chosenWord.replace(/./g, "_ ");
+        document.getElementById("word-display").innerText = displayWord;
+        document.getElementById("hint").innerText =
+          "Hint: " + selectedWordObj.hint;
+
+        createLetterButtons();
+      }
+
+      function createLetterButtons() {
+        let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let lettersDiv = document.getElementById("letters");
+        lettersDiv.innerHTML = "";
+
+        for (let letter of letters) {
+          let button = document.createElement("button");
+          button.innerText = letter;
+          button.classList.add("letter-button");
+          button.onclick = (e) => checkLetter(letter, e.target);
+          lettersDiv.appendChild(button);
+        }
+      }
+
+      function checkLetter(letter, buttonElement) {
+        let chosenWord = selectedWordObj.word.toUpperCase();
+        let newDisplay = "";
+        let correctGuess = false;
+
+        // Disable the button after clicking so they can't click it twice
+        buttonElement.disabled = true;
+
+        for (let i = 0; i < chosenWord.length; i++) {
+          if (chosenWord[i] === letter) {
+            newDisplay += letter + " ";
+            correctGuess = true;
+          } else {
+            newDisplay +=
+              document.getElementById("word-display").innerText[i * 2] + " ";
+          }
+        }
+
+        document.getElementById("word-display").innerText = newDisplay;
+
+        if (correctGuess) {
+          // Check Win Condition
+          if (!newDisplay.includes("_")) {
+            document.getElementById("message").innerText =
+              "oo teri, itna tezz dimaag 🎉";
+            disableAllButtons();
+            setTimeout(startGame, 2000);
+          }
+        } else {
+          // Wrong Guess Logic
+          lives--;
+          updateLivesDisplay();
+          triggerAnimation();
+
+          // Check Lose Condition
+          if (lives <= 0) {
+            document.getElementById("message").innerText =
+              "Aree yaar! The word was: " + selectedWordObj.word;
+            disableAllButtons();
+            setTimeout(startGame, 3000); // Give them 3 seconds to read the word before restarting
+          }
+        }
+      }
+
+      function disableAllButtons() {
+        let buttons = document.querySelectorAll(".letter-button");
+        buttons.forEach((btn) => (btn.disabled = true));
+      }
+
+      function triggerAnimation() {
+        let animationDiv = document.getElementById("animation");
+        animationDiv.innerHTML = "";
+
+        let gifs = [
+          "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
+          "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+          "https://media.giphy.com/media/26uf1EUQzKKGcIhJS/giphy.gif",
+          "https://media.giphy.com/media/lqpfdJr57GAOQHSuLr/giphy.gif",
+          "https://media.giphy.com/media/MLhIi4DoxeUjC/giphy.gif",
+          "https://media.giphy.com/media/93rI3szziYMYo/giphy.gif",
+          "https://media.giphy.com/media/Kan1AHHJmMRYA/giphy.gif",
+          "https://media.giphy.com/media/IYIlvuWc21U4g/giphy.gif",
+          "https://media.giphy.com/media/GjR6RPcURgiL6/giphy.gif",
+          "https://media.giphy.com/media/29bKyyjDKX1W8/giphy.gif",
+          "https://media.giphy.com/media/11tTNkNy1SdXGg/giphy.gif",
+          "https://media.giphy.com/media/yuZyApkowpJHG/giphy.gif",
+          "https://media.giphy.com/media/PHJR2xDfOsnovcWoLF/giphy.gif",
+          "https://media.giphy.com/media/ntRpAiuOqroeQ/giphy.gif",
+          "https://media.giphy.com/media/JO8y56O9mTmeY/giphy.gif",
+          "https://media.giphy.com/media/IzELwDFOUFCUw/giphy.gif",
+          "https://media.giphy.com/media/l3V0H7bYv5Ml5TOfu/giphy.gif",
+          "https://media.giphy.com/media/11VW2xPAb4OFPO/giphy.gif",
+        ];
+
+        let randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+
+        let img = document.createElement("img");
+        img.src = randomGif;
+        img.width = 200;
+        img.style.borderRadius = "10px"; // Added nice border radius to images
+        animationDiv.appendChild(img);
+      }
+
+      startGame();
+    </script>
+  </body>
+</html>
