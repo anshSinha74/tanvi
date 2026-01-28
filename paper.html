@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaagaz wala art</title>
 
     <!-- Google Fonts -->
@@ -14,11 +15,13 @@
 
     <style>
       * {
-    font-weight: bold;
-}
+        font-weight: bold;
+        box-sizing: border-box;
+      }
 
       body {
         height: 100vh;
+        width: 100vw;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -26,18 +29,19 @@
         background-image: url("https://www.psdgraphics.com/wp-content/uploads/2022/01/white-math-paper-texture.jpg");
         background-position: center center;
         overflow: hidden;
+        margin: 0;
+        touch-action: none; /* Prevents default browser panning/zooming */
       }
 
       .paper-video {
-  width: 100%;
-  height: 260px;          /* 👈 fixed height = crop window */
-  object-fit: cover;     /* 👈 enables cropping */
-  object-position: center; /* 👈 equal top & bottom crop */
-  border-radius: 8px;
-  user-select: none;
-  pointer-events: none;
-}
-
+        width: 100%;
+        height: 260px;          /* 👈 fixed height = crop window */
+        object-fit: cover;      /* 👈 enables cropping */
+        object-position: center; /* 👈 equal top & bottom crop */
+        border-radius: 8px;
+        user-select: none;
+        pointer-events: none;
+      }
 
       .paper {
         background-image: url("https://i0.wp.com/textures.world/wp-content/uploads/2018/10/2-Millimeter-Paper-Background-copy.jpg?ssl=1");
@@ -48,6 +52,8 @@
         box-shadow: 1px 15px 20px rgba(0, 0, 0, 0.5);
         position: absolute;
         cursor: grab;
+        user-select: none;
+        transition: transform 0.1s ease-out; /* Smoothness for dragging */
       }
 
       .paper:active {
@@ -56,6 +62,7 @@
 
       .paper.image {
         padding: 10px;
+        min-width: 250px;
       }
 
       .paper.image p {
@@ -89,16 +96,17 @@
         width: 100%;
         user-select: none;
         pointer-events: none;
+        display: block;
       }
 
       p {
         font-family: "Zeyada", cursive;
-        
         font-size: 50px;
         color: rgb(0, 0, 100);
         opacity: 0.75;
         user-select: none;
         margin: 5px 0;
+        line-height: 1.2;
       }
 
       .paper.red {
@@ -113,14 +121,28 @@
         font-size: 45px;
         color: red;
       }
+      
+      /* Mobile optimization */
+      @media (max-width: 600px) {
+        .paper {
+          padding: 15px 40px;
+        }
+        .paper.image {
+          padding: 8px;
+        }
+        p {
+          font-size: 32px;
+        }
+      }
     </style>
   </head>
 
   <body>
     <audio id="bgAudio" loop>
-  <source src="audio/background.mp3" type="audio/mpeg">
-</audio>
+      <source src="audio/background.mp3" type="audio/mpeg">
+    </audio>
 
+    <!-- Core Interactive Elements -->
     <div class="paper heart" id="heartPaper"></div>
 
     <div class="paper image">
@@ -134,7 +156,7 @@
     </div>
 
     <div class="paper image">
-      <p>She is stil inside you,<br>Don't disappoint her</p>
+      <p>She is still inside you,<br>Don't disappoint her</p>
       <img src="https://media1.tenor.com/m/qy-rqLL9ZbQAAAAd/jian-baby-jian.gif" />
     </div>
 
@@ -143,7 +165,7 @@
     </div>
 
     <div class="paper image">
-      <p>Not Like Her 🥲</p>s
+      <p>Not Like Her 🥲</p>
       <img src="https://media1.tenor.com/m/5Itl3RbRaKwAAAAd/urfimouth.gif" />
     </div>
 
@@ -160,8 +182,6 @@
       <img src="images/11.jpeg" />
     </div>
 
-    
-
     <div class="paper image">
       <p>An Artist by Soul</p>
       <p>An Engineer by Choice.</p>
@@ -174,8 +194,6 @@
       <p>Movie Kr li??</p>
       <img src="images/5.jpeg" />
     </div>
-
-
 
     <div class="paper image">
       <img src="images/6.jpeg" />
@@ -236,7 +254,7 @@
     </div>
 
     <div class="paper image">
-      <p style="font-size: 490%;">      <br><b>DRAG ME        </p>
+      <p style="font-size: 300%; margin-top: 20px;"><b>DRAG ME</b></p>
       <img src="https://media.tenor.com/o2lBSBlvmqsAAAAi/take-me.gif">
     </div>
 
@@ -251,77 +269,104 @@
           this.startY = 0;
           this.x = 0;
           this.y = 0;
+          // Track movement to distinguish tap from drag
+          this.distX = 0;
+          this.distY = 0;
           this.rotation = Math.random() * 30 - 15;
           this.init();
         }
 
         init() {
+          // Input Listeners
           this.paper.addEventListener("mousedown", (e) => this.start(e));
-          this.paper.addEventListener("touchstart", (e) => this.start(e), {
-            passive: false,
-          });
+          this.paper.addEventListener("touchstart", (e) => this.start(e), { passive: false });
+          
           document.addEventListener("mousemove", (e) => this.move(e));
-          document.addEventListener("touchmove", (e) => this.move(e), {
-            passive: false,
-          });
+          document.addEventListener("touchmove", (e) => this.move(e), { passive: false });
+          
           document.addEventListener("mouseup", () => this.end());
           document.addEventListener("touchend", () => this.end());
         }
 
         start(e) {
-          e.preventDefault();
+          // preventDefault is necessary to stop scroll, but blocks 'click'
+          // We will handle the redirect manually in end()
+          if (e.type === 'touchstart') e.preventDefault();
+          
           this.holding = true;
           this.paper.style.zIndex = highestZ++;
+          
           const t = e.touches ? e.touches[0] : e;
           this.startX = t.clientX - this.x;
           this.startY = t.clientY - this.y;
+          
+          // Reset movement tracking for tap detection
+          this.distX = 0;
+          this.distY = 0;
         }
 
         move(e) {
           if (!this.holding) return;
+          if (e.type === 'touchmove') e.preventDefault();
+
           const t = e.touches ? e.touches[0] : e;
+          const prevX = this.x;
+          const prevY = this.y;
+          
           this.x = t.clientX - this.startX;
           this.y = t.clientY - this.startY;
+          
+          // Accumulate movement distance
+          this.distX += Math.abs(this.x - prevX);
+          this.distY += Math.abs(this.y - prevY);
+          
           this.paper.style.transform = `translate(${this.x}px, ${this.y}px) rotate(${this.rotation}deg)`;
         }
 
         end() {
+          if (this.holding) {
+            // Check if this was a tap (very little movement)
+            if (this.distX < 10 && this.distY < 10) {
+              if (this.paper.id === "heartPaper") {
+                window.location.href = "surprise.html";
+              }
+            }
+          }
           this.holding = false;
         }
       }
 
+      // Initialize all papers
       document.querySelectorAll(".paper").forEach((p) => new Paper(p));
 
-      const heartPaper = document.getElementById("heartPaper");
-      heartPaper.addEventListener("click", () => {
-        window.location.href = "surprise.html";
+      // Video Paper Interaction
+      document.querySelectorAll(".video-paper").forEach(paper => {
+        const video = paper.querySelector(".paper-video");
+        let started = false;
+
+        function startVideo() {
+          if (started) return;
+          started = true;
+          video.play().catch(() => {});
+        }
+
+        paper.addEventListener("mousedown", startVideo);
+        paper.addEventListener("touchstart", startVideo);
       });
-  document.querySelectorAll(".video-paper").forEach(paper => {
-    const video = paper.querySelector(".paper-video");
-    let started = false;
 
-    function startVideo() {
-      if (started) return;   // don't restart
-      started = true;
-      video.play().catch(() => {});
-    }
+      // Background Audio Logic
+      const bgAudio = document.getElementById("bgAudio");
+      let audioStarted = false;
 
-    paper.addEventListener("mousedown", startVideo);
-    paper.addEventListener("touchstart", startVideo);
-  });
-  const bgAudio = document.getElementById("bgAudio");
-  let audioStarted = false;
+      function startAudio() {
+        if (audioStarted) return;
+        audioStarted = true;
+        bgAudio.volume = 0.4;
+        bgAudio.play().catch(() => {});
+      }
 
-  function startAudio() {
-    if (audioStarted) return;
-    audioStarted = true;
-    bgAudio.volume = 0.4; // soft background
-    bgAudio.play().catch(() => {});
-  }
-
-  // Start audio on ANY user interaction
-  document.addEventListener("mousedown", startAudio);
-  document.addEventListener("touchstart", startAudio);
+      document.addEventListener("mousedown", startAudio);
+      document.addEventListener("touchstart", startAudio);
     </script>
   </body>
 </html>
