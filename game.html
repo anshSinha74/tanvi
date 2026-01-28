@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tanvi's Birthday Game</title>
+    <style>
+      body {
+        font-family: "Comic Sans MS", cursive, sans-serif;
+        text-align: center;
+        background-color: #ffefd5;
+        background-image: url("https://www.transparenttextures.com/patterns/bright-squares.png");
+        color: #5a3d1e;
+        overflow-x: hidden; /* Prevent scrollbar during shake */
+        transition:
+          background-color 1s ease,
+          color 0.5s ease;
+      }
+
+      /* BOSS MODE STYLES - INTENSITY UPGRADE */
+      body.boss-mode {
+        background-image: none;
+        background-color: #1a0505; /* Dark ominous background */
+        color: #ff6347;
+      }
+
+      body.boss-mode h1 {
+        color: #ff0000;
+        text-shadow:
+          0 0 10px #ff4500,
+          0 0 20px #ff0000;
+        animation: flicker 1.5s infinite alternate;
+      }
+
+      body.boss-mode #word-display {
+        color: #ffcc00;
+        text-shadow: 0 0 10px #ff4500;
+      }
+
+      @keyframes flicker {
+        0% {
+          opacity: 1;
+          text-shadow: 0 0 10px #ff4500;
+        }
+        50% {
+          opacity: 0.9;
+          text-shadow: 0 0 20px #ff0000;
+        }
+        100% {
+          opacity: 1;
+          text-shadow: 0 0 30px #ffff00;
+        }
+      }
+
+      h1 {
+        font-size: 2.5em;
+        color: #ff4500;
+        text-shadow: 2px 2px #ffa07a;
+        margin-bottom: 5px;
+        transition: all 0.5s;
+      }
+
+      /* NEW STYLE FOR LIVES */
+      #lives {
+        font-size: 2em;
+        margin: 10px;
+        color: #ff0000;
+        text-shadow: 1px 1px 2px #5a3d1e;
+        transition: transform 0.2s;
+        min-height: 40px;
+      }
+
+      /* BOSS TIMER STYLE */
+      #timer {
+        display: none;
+        font-size: 3em;
+        font-weight: bold;
+        color: #ff0000;
+        text-shadow: 2px 2px 0px #000;
+        animation: pulse 1s infinite;
+        margin: 10px;
+        transition:
+          color 0.2s,
+          transform 0.2s;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.1);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      #word-display {
+        font-size: 2.5em;
+        margin: 20px;
+        font-weight: bold;
+        color: #228b22;
+        letter-spacing: 5px;
+        transition:
+          color 0.3s,
+          transform 0.3s;
+      }
+
+      #hint {
+        font-size: 1.5em;
+        color: #8a2be2;
+        margin: 10px;
+        font-style: italic;
+        background: rgba(255, 255, 255, 0.5);
+        padding: 5px;
+        border-radius: 10px;
+        display: inline-block;
+        max-width: 90%;
+      }
+
+      #message {
+        font-size: 1.6em;
+        color: #d2691e;
+        font-weight: bold;
+        min-height: 1.5em;
+        margin: 15px auto;
+        max-width: 90%;
+        padding: 10px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .letter-button {
+        font-size: 1.5em;
+        margin: 5px;
+        padding: 15px;
+        cursor: pointer;
+        border-radius: 10px;
+        border: none;
+        background-color: #ff6347;
+        color: white;
+        font-weight: bold;
+        transition: 0.3s;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .letter-button:active {
+        transform: scale(0.95);
+      }
+
+      .letter-button:hover {
+        background-color: #ff4500;
+        transform: scale(1.1);
+      }
+
+      .letter-button:disabled {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      #animation {
+        margin-top: 20px;
+        min-height: 200px;
+      }
+
+      /* Shake Animation for wrong guesses */
+      .shake {
+        animation: shake 0.5s;
+        animation-iteration-count: 1;
+      }
+
+      @keyframes shake {
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-1px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0px) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
+      }
+
+      /* Canvas for Confetti */
+      #confetti-canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 999;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="confetti-canvas"></canvas>
+    <audio id="bg-music" loop preload="auto">
+      <source src="background-music.mp3" type="audio/mpeg" />
+    </audio>
+
+    <h1>🎂 Tanvi's IQ Test 🎂</h1>
+
+    <div id="lives"></div>
+    <div id="timer">60</div>
+
+    <p id="hint"></p>
+    <p id="word-display">_ _ _ _ _ _ _ _</p>
+    <div id="letters"></div>
+    <p id="message"></p>
+    <div id="animation"></div>
+
+    <script>
+      (function forceAudioStart() {
+        const music = document.getElementById("bg-music");
+
+        const startMusic = () => {
+          music.play().catch(() => {});
+          document.removeEventListener("click", startMusic);
+          document.removeEventListener("keydown", startMusic);
+          document.removeEventListener("touchstart", startMusic);
+          // Resume audio context if suspended
+          if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+          }
+        };
+
+        music.play().catch(() => {});
+        document.addEventListener("click", startMusic);
+        document.addEventListener("keydown", startMusic);
+        document.addEventListener("touchstart", startMusic);
+      })();
+
+      // --- SIMPLE AUDIO SYNTHESIZER (No extra files needed!) ---
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function playSound(type) {
+        if (!audioCtx) return;
+        if (audioCtx.state === "suspended") audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === "correct") {
+          // Cheerful Ding (Sine wave)
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(523.25, now); // C5
+          osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.1); // C6
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } else if (type === "wrong") {
+          // Buzzer (Sawtooth wave)
+          osc.type = "sawtooth";
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.2);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        } else if (type === "win") {
+          // Victory Fanfare
+          const notes = [523.25, 659.25, 783.99, 1046.5]; // C E G C
+          notes.forEach((freq, i) => {
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = "square";
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+
+            const time = now + i * 0.1;
+            osc2.frequency.setValueAtTime(freq, time);
+            gain2.gain.setValueAtTime(0.05, time);
+            gain2.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+            osc2.start(time);
+            osc2.stop(time + 0.3);
+          });
+        }
+      }
+
+      // --- THE ROASTING AI DATABASE ---
+      const aiInsults = [
+        "Tanvi, are you pressing buttons with your eyes closed? 😑",
+        "Ansh told me you were smart... was he lying? 🤨",
+        "Nope! Even a potato could guess this. 🥔",
+        "Happy Birthday! But that letter was a sad choice. 😂",
+        "Try using 1% of your brain, Sissu. 🧠",
+        "Wrong! Do you need Ansh to help you? 😏",
+        "Is this how you play? Oof. 📉",
+        "Error 404: Logic not found. Try again, Tanvi!",
+        "Why did you click that? Just why? 🤷‍♂️",
+        "My grandma guesses faster than this. 👵",
+        "Come on Tanvi, the gift is waiting! Don't mess this up!",
+        "Aree yaar... kya gunda banegi re tu? 😂",
+        "That letter is NOT it. Try harder!",
+        "Ansh is laughing at this guess right now. 🤭",
+        "Imagine getting this wrong on your birthday. Couldn't be me.",
+      ];
+
+      const wordsWithHints = [
+        {
+          word: "Tomorrow",
+          hint: "What is always coming but never arrives? 🤔",
+        },
+        {
+          word: "Crane",
+          hint: "What bird can lift the most weight?",
+        },
+        {
+          word: "Sketching",
+          hint: "Something you’ve loved since childhood and are really good at.",
+        },
+        {
+          word: "age",
+          hint: "What goes up but never ever comes down?",
+        },
+        { word: "Durga", hint: "Which goddess is hidden in your name?" },
+        {
+          word: "Candle",
+          hint: "I start out tall but the longer I stand the shorter I grow. What am I?",
+        },
+        {
+          word: "ukulele",
+          hint: "During your drop year, which musical instrument did you learn and enjoy playing?",
+        },
+        {
+          word: "Amla",
+          hint: "According to your bro, which fruit keeps the dermatologist away?😂",
+        },
+        {
+          word: "Serum",
+          hint: "What silly thing did your brother call a polio drop? 😂",
+        },
+        {
+          word: "Clock",
+          hint: "What has a face and two hands, but no arms or legs?",
+        },
+      ];
+
+      let usedWords = new Set();
+      let selectedWordObj;
+      let lives = 5;
+
+      // Boss Level Variables
+      let isBossLevel = false;
+      let timerInterval;
+      let timeLeft = 60;
+
+      function getNewWord() {
+        let availableWords = wordsWithHints.filter(
+          (item) => !usedWords.has(item.word),
+        );
+
+        if (availableWords.length === 0) {
+          // If normal words are done, check if we've done the boss level
+          if (!isBossLevel) {
+            startBossLevel();
+            return selectedWordObj;
+          } else {
+            // Game Completely Finished
+            return null;
+          }
+        }
+
+        selectedWordObj =
+          availableWords[Math.floor(Math.random() * availableWords.length)];
+        usedWords.add(selectedWordObj.word);
+        return selectedWordObj;
+      }
+
+      function startBossLevel() {
+        isBossLevel = true;
+        selectedWordObj = {
+          word: "Gloves",
+          hint: "Five extensions, no heartbeat, no breath. You needed it—but it isn’t yours. (NO HINT AVAILABLE!)",
+        };
+
+        // --- FUN VISUAL UPGRADE: BOSS MODE ACTIVATED ---
+        document.body.classList.add("boss-mode");
+        playSound("win"); // Play a little alert sound (reusing win sound for drama)
+
+        // Setup Boss UI
+        document.getElementById("message").innerText =
+          "FINAL BOSS! ⚠️ Wrong guess = -10s penalty!";
+        document.getElementById("lives").style.display = "none"; // Hide hearts
+        document.getElementById("timer").style.display = "block"; // Show timer
+
+        // Start Timer
+        timeLeft = 60;
+        document.getElementById("timer").innerText = timeLeft;
+        timerInterval = setInterval(() => {
+          timeLeft--;
+          document.getElementById("timer").innerText =
+            timeLeft > 0 ? timeLeft : 0;
+          if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            playSound("wrong");
+            alert("Time's Up! You lost the final battle. Restarting...");
+            window.location.reload();
+          }
+        }, 1000);
+      }
+
+      function updateLivesDisplay() {
+        if (isBossLevel) return; // Don't show lives in boss mode
+
+        let hearts = "";
+        for (let i = 0; i < lives; i++) {
+          hearts += "❤️ ";
+        }
+        if (lives === 0) hearts = "💔 Game Over";
+        document.getElementById("lives").innerText = hearts;
+      }
+
+      function startGame() {
+        // Reset states if restarting (though boss mode reload handles full restart)
+        if (!isBossLevel) {
+          lives = 5;
+          updateLivesDisplay();
+          document.getElementById("lives").style.display = "block";
+          document.getElementById("timer").style.display = "none";
+          document.getElementById("message").innerText =
+            "Best of luck, Tanvi! Don't embarrass Ansh. 😉";
+        }
+
+        document.getElementById("message").style.backgroundColor =
+          "transparent";
+        document.getElementById("animation").innerHTML = "";
+
+        let wordObj = getNewWord();
+
+        // If wordObj is null, it means Boss level was already passed (Redundant check but safe)
+        if (!wordObj && isBossLevel) {
+          winGame();
+          return;
+        }
+
+        let chosenWord = selectedWordObj.word.toUpperCase();
+        let displayWord = chosenWord.replace(/./g, "_ ");
+        document.getElementById("word-display").innerText = displayWord;
+        document.getElementById("word-display").style.transform = "scale(1)";
+        document.getElementById("word-display").style.color = isBossLevel
+          ? "#ffcc00"
+          : "#228b22";
+
+        // Update Hint Text
+        if (isBossLevel) {
+          document.getElementById("hint").innerText = selectedWordObj.hint;
+          document.getElementById("hint").style.color = "red";
+          document.getElementById("hint").style.fontWeight = "bold";
+        } else {
+          document.getElementById("hint").innerText =
+            "Hint: " + selectedWordObj.hint;
+          document.getElementById("hint").style.color = "#8a2be2";
+          document.getElementById("hint").style.fontWeight = "normal";
+        }
+
+        createLetterButtons();
+      }
+
+      function winGame() {
+        clearInterval(timerInterval); // Stop timer if it was running
+        document.getElementById("message").innerText =
+          "All words guessed! Well done, Sissu! 🎉 Redirecting...";
+        playSound("win");
+        startConfetti();
+        disableAllButtons();
+        setTimeout(() => {
+          window.location.href = "paper.html";
+        }, 3000);
+      }
+
+      function createLetterButtons() {
+        let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let lettersDiv = document.getElementById("letters");
+        lettersDiv.innerHTML = "";
+
+        for (let letter of letters) {
+          let button = document.createElement("button");
+          button.innerText = letter;
+          button.classList.add("letter-button");
+          button.onclick = (e) => checkLetter(letter, e.target);
+          lettersDiv.appendChild(button);
+        }
+      }
+
+      function checkLetter(letter, buttonElement) {
+        let chosenWord = selectedWordObj.word.toUpperCase();
+        let newDisplay = "";
+        let correctGuess = false;
+
+        buttonElement.disabled = true;
+
+        let currentDisplay = document
+          .getElementById("word-display")
+          .innerText.replace(/ /g, "");
+
+        for (let i = 0; i < chosenWord.length; i++) {
+          if (chosenWord[i] === letter) {
+            newDisplay += letter + " ";
+            correctGuess = true;
+          } else {
+            // Keep existing letter or underscore
+            if (currentDisplay[i] !== "_") {
+              newDisplay += currentDisplay[i] + " ";
+            } else {
+              newDisplay += "_ ";
+            }
+          }
+        }
+
+        document.getElementById("word-display").innerText = newDisplay;
+
+        if (correctGuess) {
+          playSound("correct");
+
+          // WIN CONDITION FOR CURRENT WORD
+          if (!newDisplay.includes("_")) {
+            // Pulse Effect on Word Completion
+            document.getElementById("word-display").style.transform =
+              "scale(1.2)";
+
+            if (isBossLevel) {
+              // IMMEDIATE WIN for Boss Level
+              document.getElementById("message").innerText =
+                "YOU DEFEATED THE BOSS! 🧤🎉";
+              winGame();
+            } else {
+              // Standard Win
+              document.getElementById("message").innerText =
+                "Woohoo! Sahi jawaab! 🎉";
+              document.getElementById("message").style.color = "#228b22";
+              startConfetti();
+              disableAllButtons();
+              setTimeout(() => {
+                stopConfetti();
+                startGame(); // Gets next word
+              }, 3000);
+            }
+          } else {
+            document.getElementById("message").innerText =
+              "Good job! Keep going!";
+            document.getElementById("message").style.color = "#228b22";
+          }
+        } else {
+          // WRONG GUESS
+          playSound("wrong");
+
+          if (isBossLevel) {
+            // Boss Mode Penalty: 10 seconds deducted
+            timeLeft -= 10;
+
+            // Visual feedback
+            let timerElem = document.getElementById("timer");
+            timerElem.innerText = timeLeft > 0 ? timeLeft : 0;
+            timerElem.style.transform = "scale(1.5)"; // Pulse Effect
+            timerElem.style.color = "#8b0000"; // Dark Red
+
+            setTimeout(() => {
+              timerElem.style.transform = "scale(1)";
+              timerElem.style.color = "#ff0000";
+            }, 300);
+
+            if (timeLeft <= 0) {
+              clearInterval(timerInterval);
+              // Small timeout to allow UI to update before alert
+              setTimeout(() => {
+                alert("Time's Up! Penalty drained your time! Restarting...");
+                window.location.reload();
+              }, 100);
+              return;
+            }
+          } else {
+            // Only decrease lives in normal mode
+            lives--;
+            updateLivesDisplay();
+          }
+
+          triggerAnimation();
+
+          // Shake effect
+          document.body.classList.add("shake");
+          setTimeout(() => document.body.classList.remove("shake"), 500);
+
+          // Random AI Roast
+          let randomRoast =
+            aiInsults[Math.floor(Math.random() * aiInsults.length)];
+          let msgBox = document.getElementById("message");
+          msgBox.innerText = randomRoast;
+          msgBox.style.color = "#d2691e";
+
+          // Check Lose Condition (Only for Normal Mode)
+          if (!isBossLevel && lives <= 0) {
+            msgBox.innerText =
+              "Aree yaar! Failed! The word was: " + selectedWordObj.word;
+            disableAllButtons();
+            // Reset Boss State just in case
+            isBossLevel = false;
+            setTimeout(startGame, 4000);
+          }
+        }
+      }
+
+      function disableAllButtons() {
+        let buttons = document.querySelectorAll(".letter-button");
+        buttons.forEach((btn) => (btn.disabled = true));
+      }
+
+      function triggerAnimation() {
+        let animationDiv = document.getElementById("animation");
+        animationDiv.innerHTML = "";
+
+        let gifs = [
+          "https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif",
+          "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+          "https://media.giphy.com/media/26uf1EUQzKKGcIhJS/giphy.gif",
+          "https://media.giphy.com/media/lqpfdJr57GAOQHSuLr/giphy.gif",
+          "https://media.giphy.com/media/MLhIi4DoxeUjC/giphy.gif",
+          "https://media.giphy.com/media/93rI3szziYMYo/giphy.gif",
+          "https://media.giphy.com/media/Kan1AHHJmMRYA/giphy.gif",
+          "https://media.giphy.com/media/IYIlvuWc21U4g/giphy.gif",
+          "https://media.giphy.com/media/GjR6RPcURgiL6/giphy.gif",
+          "https://media.giphy.com/media/29bKyyjDKX1W8/giphy.gif",
+          "https://media.giphy.com/media/11tTNkNy1SdXGg/giphy.gif",
+          "https://media.giphy.com/media/yuZyApkowpJHG/giphy.gif",
+          "https://media.giphy.com/media/PHJR2xDfOsnovcWoLF/giphy.gif",
+          "https://media.giphy.com/media/ntRpAiuOqroeQ/giphy.gif",
+          "https://media.giphy.com/media/JO8y56O9mTmeY/giphy.gif",
+          "https://media.giphy.com/media/IzELwDFOUFCUw/giphy.gif",
+          "https://media.giphy.com/media/l3V0H7bYv5Ml5TOfu/giphy.gif",
+          "https://media.giphy.com/media/11VW2xPAb4OFPO/giphy.gif",
+        ];
+
+        let randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+
+        let img = document.createElement("img");
+        img.src = randomGif;
+        img.width = 200;
+        img.style.borderRadius = "10px";
+        img.style.border = "4px solid #ff4500";
+        animationDiv.appendChild(img);
+      }
+
+      // --- CONFETTI LOGIC (Built-in so no external files needed) ---
+      let confettiActive = false;
+      const canvas = document.getElementById("confetti-canvas");
+      const ctx = canvas.getContext("2d");
+      let particles = [];
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resizeCanvas);
+      resizeCanvas();
+
+      function startConfetti() {
+        if (confettiActive) return;
+        confettiActive = true;
+        particles = [];
+        for (let i = 0; i < 100; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            size: Math.random() * 10 + 5,
+            speedY: Math.random() * 3 + 2,
+            speedX: Math.random() * 2 - 1,
+          });
+        }
+        requestAnimationFrame(updateConfetti);
+      }
+
+      function stopConfetti() {
+        confettiActive = false;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+
+      function updateConfetti() {
+        if (!confettiActive) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((p) => {
+          p.y += p.speedY;
+          p.x += p.speedX;
+          if (p.y > canvas.height) p.y = -10;
+
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        requestAnimationFrame(updateConfetti);
+      }
+
+      // --- KEYBOARD SUPPORT ---
+      document.addEventListener("keydown", (e) => {
+        // Get the key pressed and convert to uppercase
+        const char = e.key.toUpperCase();
+        const buttons = document.querySelectorAll(".letter-button");
+
+        // Find the matching button and click it if it's enabled
+        buttons.forEach((btn) => {
+          if (btn.innerText === char && !btn.disabled) {
+            btn.click();
+          }
+        });
+      });
+
+      startGame();
+    </script>
+  </body>
+</html>
